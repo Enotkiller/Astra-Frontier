@@ -1,6 +1,8 @@
 .idea/
 .zed/
+assets/*
 
+*.zip
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -403,4 +405,3 @@ vite.config.ts.timestamp-*
 
 # Turbo Repo
 .turbo
-

@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Astra Frontier 2026</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cascadia+Code:wght@400;600&family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Outfit:wght@100..900&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- AOS -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" />
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+
+    <!-- Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Three.js + OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+
+    <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+    <header class="navbar">
+        <div class="nav-brand">ASTRA FRONTIER <span>2026</span></div>
+        <nav class="nav-links">
+            <a href="#slide-1">Overview</a>
+            <a href="#slide-2">Earth Map</a>
+            <a href="#slide-3" id="nav-lab-link" style="display: none;">3D Inspector</a>
+            <a href="#slide-4">About</a>
+        </nav>
+    </header>
+
+    <section id="slide-1" class="hero-section">
+        <div class="container hero-content">
+            <h1 class="hero-title hero-animate-1">
+                Identify Earth Locations that Analog<br />
+                the Permanent Moon Base Locations<br />
+                and Mars
+            </h1>
+
+            <div class="hero-body">
+                <div class="hero-card hero-animate-2">
+                    <p>
+                        Developed for the NASA Space Apps Challenge, this project identifies locations on Earth
+                        with geological or environmental features similar to those found at candidate sites for
+                        a permanent lunar base and in selected regions of Mars.
+                    </p>
+                    <p>
+                        Using data from <strong>NASA LOLA, Lunar Diviner, MGS MOLA/TES, and Copernicus DEM</strong>,
+                        we compiled a list of potential terrestrial analogs. Explore the locations below to see
+                        which features they share with their lunar or Martian counterparts.
+                    </p>
+                </div>
+
+                <div class="hero-globe-wrapper" id="hero-globe-wrapper">
+                    <img src="./earth.svg" alt="Earth Geospatial Mesh" class="hero-globe-img" id="hero-globe-img" />
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="slide-2" class="explorer-section">
+        <div class="container">
+            <div class="section-header" data-aos="fade-up">
+                <div>
+                    <h2 class="section-title">Terrestrial Analog Explorer</h2>
+                    <p class="section-subtitle">
+                        Click any highlighted site or anywhere on land to open the 3D &amp; 2D elevation inspector
+                    </p>
+                </div>
+                <div class="matched-pill">
+                    High-Match Zones (&ge;90%): <span id="matched-count" class="mono">—</span>
+                </div>
+            </div>
+
+            <div class="explorer-grid" data-aos="fade-up" data-aos-delay="100">
+                <div class="map-card">
+                    <div id="earth-map"></div>
+                    <div class="map-legend">
+                        <span class="legend-item"><i class="dot-moon"></i> Moon Analog</span>
+                        <span class="legend-item"><i class="dot-mars"></i> Mars Analog</span>
+                        <span class="legend-hint">Click any point to inspect in 3D</span>
+                    </div>
+                </div>
+
+                <div class="sidebar-panel">
+                    <div class="filters-card">
+                        <div class="filter-group">
+                            <label for="filter-continent">Continent / Region</label>
+                            <select id="filter-continent" class="filter-select">
+                                <option value="ALL">All Continents</option>
+                                <option value="Africa">Africa</option>
+                                <option value="Antarctica">Antarctica</option>
+                                <option value="Asia">Asia</option>
+                                <option value="Europe">Europe</option>
+                                <option value="North America">North America</option>
+                                <option value="Oceania">Oceania</option>
+                                <option value="South America">South America</option>
+                            </select>
+                        </div>
+
+                        <div class="filter-group">
+                            <label for="filter-planet">Planetary Target</label>
+                            <select id="filter-planet" class="filter-select">
+                                <option value="ALL">All Targets (Moon &amp; Mars)</option>
+                                <option value="moon">Moon (South Pole Sites)</option>
+                                <option value="mars">Mars (Selected Regions)</option>
+                            </select>
+                        </div>
+
+                        <div class="filter-group">
+                            <label for="filter-match">Ranking Priority</label>
+                            <select id="filter-match" class="filter-select">
+                                <option value="overall">Overall AI Similarity (128D)</option>
+                                <option value="slope">Steep Slopes &amp; Craters</option>
+                                <option value="roughness">Surface Roughness</option>
+                                <option value="thermal">Thermal &amp; Regolith Index</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="list-card">
+                        <div class="list-header">
+                            <span>Top Ranked Analogs</span>
+                            <span id="list-status" class="list-status">Loading...</span>
+                        </div>
+                        <div id="locations-list" class="locations-scroll"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="slide-3" class="inspector-wrapper">
+        <div class="inspector-inner">
+            <div class="container inspector-container">
+
+                <div class="inspector-topbar">
+                    <div>
+                        <div class="inspector-eyebrow">5 KM &times; 5 KM TERRAIN MATCHER &bull; 64&times;64 PHYSICAL CHANNELS</div>
+                        <h2 class="inspector-heading" id="insp-title">Loading Pair Telemetry...</h2>
+                    </div>
+
+                    <div class="inspector-controls">
+                        <div class="planet-switch">
+                            <button type="button" class="planet-btn" data-target-planet="moon" id="btn-switch-moon">
+                                Moon (<span id="btn-moon-score" class="mono">—</span>)
+                            </button>
+                            <button type="button" class="planet-btn" data-target-planet="mars" id="btn-switch-mars">
+                                Mars (<span id="btn-mars-score" class="mono">—</span>)
+                            </button>
+                        </div>
+
+                        <button type="button" class="spin-btn active" id="btn-toggle-spin" title="Toggle 3D rotation">
+                            3D Spin: ON
+                        </button>
+
+                        <button type="button" class="close-inspector-btn" id="close-inspector-btn" title="Close Inspector">
+                            Close &times;
+                        </button>
+                    </div>
+                </div>
+
+                <div class="inspector-split">
+
+                    <div class="inspector-left-col">
+                        <div class="vp3d-card">
+                            <div class="vp3d-header">
+                                <div class="vp3d-title-group">
+                                    <span class="vp-tag earth">EARTH</span>
+                                    <span class="vp-coords mono" id="earth-vp-coords">—</span>
+                                </div>
+                                <span class="vp-source" id="earth-vp-source">—</span>
+                            </div>
+                            <div class="canvas-box-3d" id="canvas-earth"></div>
+                        </div>
+
+                        <div class="vp3d-card">
+                            <div class="vp3d-header">
+                                <div class="vp3d-title-group">
+                                    <span class="vp-tag target" id="target-vp-tag">MOON</span>
+                                    <span class="vp-coords mono" id="target-vp-coords">—</span>
+                                </div>
+                                <span class="vp-source" id="target-vp-source">—</span>
+                            </div>
+                            <div class="canvas-box-3d" id="canvas-target"></div>
+                        </div>
+                    </div>
+
+                    <div class="inspector-right-col">
+
+                        <div class="matcher-header-card">
+                            <div class="matcher-top-row">
+                                <div>
+                                    <div class="matcher-title" id="matcher-subtitle">Earth-to-Planetary Terrain Matcher</div>
+                                    <div class="matcher-sub">64&times;64 Physical Channel Analysis &amp; 128-Bar Latent Vector Fingerprint</div>
+                                </div>
+                                <div class="cosine-badge">
+                                    Cosine Similarity: <span id="insp-score" class="mono">—</span>
+                                </div>
+                            </div>
+
+                            <!-- Кнопки слоёв -->
+                            <div class="layer-buttons" id="layer-buttons">
+                                <button type="button" class="layer-btn active" data-layer="relief">Relative Relief</button>
+                                <button type="button" class="layer-btn" data-layer="slope">Slope (°)</button>
+                                <button type="button" class="layer-btn" data-layer="roughness">Roughness</button>
+                                <button type="button" class="layer-btn" data-layer="thermal">Heat &amp; Dryness</button>
+                                <button type="button" class="layer-btn" data-layer="satellite">Satellite / Albedo</button>
+                            </div>
+
+                            <div class="neural-insight-bar" id="neural-insight-bar">
+                                <span class="insight-dot"></span>
+                                <span id="neural-insight-text">Select a site to inspect channel similarity...</span>
+                            </div>
+                        </div>
+
+                        <div class="grid2d-pair">
+                            <div class="grid2d-card">
+                                <div class="grid2d-head">
+                                    <span class="grid2d-name" id="grid2d-earth-title">Earth Site</span>
+                                    <span class="grid2d-role">Terrestrial Grid</span>
+                                </div>
+                                <div class="grid2d-canvas-wrap">
+                                    <canvas id="grid2d-earth" width="256" height="256"></canvas>
+                                </div>
+                                <div class="grid2d-foot">
+                                    <span id="grid2d-earth-metric">Relative Relief</span>
+                                    <span id="grid2d-earth-val" class="mono">0.0 m</span>
+                                </div>
+                            </div>
+
+                            <div class="grid2d-card">
+                                <div class="grid2d-head">
+                                    <span class="grid2d-name" id="grid2d-target-title">Planetary Target</span>
+                                    <span class="grid2d-role">Orbital Grid</span>
+                                </div>
+                                <div class="grid2d-canvas-wrap">
+                                    <canvas id="grid2d-target" width="256" height="256"></canvas>
+                                </div>
+                                <div class="grid2d-foot">
+                                    <span id="grid2d-target-metric">Relative Relief</span>
+                                    <span id="grid2d-target-val" class="mono">0.0 m</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mini-chart-card">
+                            <div class="mini-chart-head">
+                                <span id="profile-chart-title">Center Row Profile (Row 32 Cross-Section)</span>
+                                <div class="chart-legend-inline">
+                                    <span><i class="leg-dot target"></i> <b id="leg-target-name">Target</b></span>
+                                    <span><i class="leg-dot earth"></i> Earth</span>
+                                </div>
+                            </div>
+                            <div class="mini-chart-wrap">
+                                <canvas id="profile-chart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="mini-chart-card">
+                            <div class="mini-chart-head">
+                                <span>64-Element Latent Vector Fingerprint Alignment</span>
+                                <span class="mono text-xs text-slate-400">L2-Normalized Embedding</span>
+                            </div>
+                            <div class="mini-chart-wrap">
+                                <canvas id="vector-chart"></canvas>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="slide-4" class="about-section">
+        <div class="container">
+            <div class="about-grid" data-aos="fade-up">
+                <div class="pipeline-steps">
+                    <div class="step-card">
+                        <div class="step-num">01 &bull; ORBITAL TELEMETRY HARMONIZATION</div>
+                        <p>
+                            We slice 5&times;5 km patches across Earth, the Lunar South Pole, and Mars into 5
+                            scale-invariant physical channels: slope angle, micro-roughness, sea-level-independent
+                            relative relief, diurnal thermal swing, and surface aridity/albedo.
+                        </p>
+                    </div>
+                    <div class="step-card">
+                        <div class="step-num">02 &bull; ROTATION-INVARIANT AUTOENCODER</div>
+                        <p>
+                            A PyTorch convolutional autoencoder trained with rotational augmentations compresses each
+                            5&times;64&times;64 physical tensor into a 128-dimensional latent embedding vector.
+                        </p>
+                    </div>
+                    <div class="step-card">
+                        <div class="step-num">03 &bull; REAL-TIME FAISS SIMILARITY SEARCH</div>
+                        <p>
+                            Cosine similarity indexing across 575,483 terrestrial sites enables instant analog
+                            discovery for rover mobility testing, astronaut field training, and habitat engineering.
+                        </p>
+                    </div>
+
+                    <div class="step-card">
+                        <div class="step-num">01 &bull; ORBITAL TELEMETRY HARMONIZATION</div>
+                        <p>
+                            We slice 5&times;5 km patches across Earth, the Lunar South Pole, and Mars into 5
+                            scale-invariant physical channels: slope angle, micro-roughness, sea-level-independent
+                            relative relief, diurnal thermal swing, and surface aridity/albedo. Where orbital
+                            temperature telemetry was unavailable, a neutral baseline value of <strong>0.5</strong>
+                            was assigned.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="about-text">
+                    <h2 class="section-title">About the project</h2>
+                    <p>
+                        This project examines how sites on Earth can serve as analogs for potential permanent lunar
+                        base locations and selected regions of Mars. Using orbital datasets from NASA LOLA, Lunar
+                        Diviner, Mars Global Surveyor MOLA/TES, and Copernicus DEM, we compared geological and
+                        thermophysical features across three planetary bodies.
+                    </p>
+                    <p>
+                        For each terrestrial location, our model highlights the exact physical properties shared
+                        with its lunar or Martian counterpart, supporting mission simulation and instrument
+                        calibration prior to off-world deployment.
+                    </p>
+                </div>
+            </div>
+
+            <footer class="site-footer">
+                <a href="https://www.spaceappschallenge.org/2026/find-a-team/astra-frontier/" target="_blank" rel="noopener noreferrer" class="footer-brand">
+                    ASTRA FRONTIER &bull; Team Page &nearr;
+                </a>
+                <div class="footer-links">
+                    <a href="https://github.com/Enotkiller/Astra-Frontier" target="_blank" rel="noopener noreferrer" class="github-link">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
+                        </svg>
+                        GitHub Repository
+                    </a>
+                    <span>NASA Space Apps Challenge 2026</span>
+                    <a href="#slide-1">Back to Top &uarr;</a>
+                </div>
+            </footer>
+        </div>
+    </section>
+
+    <script src="./app.js"></script>
+</body>
+</html>
